@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartiki Resin Arts - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* सर्व CSS same राहील */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Password Modal CSS - same */
+        .password-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(102,126,234,0.95); display: flex; align-items: center; 
+            justify-content: center; z-index: 10000; backdrop-filter: blur(10px);
+        }
+        .password-modal.hidden { display: none; }
+        .password-container { 
+            background: white; border-radius: 25px; padding: 3rem 2.5rem; 
+            text-align: center; box-shadow: 0 30px 80px rgba(102,126,234,0.5); 
+            border: 3px solid #667eea; max-width: 450px; width: 90%; 
+            animation: modalSlideIn 0.4s ease-out; 
+        }
+        @keyframes modalSlideIn { 
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .password-title {
+            font-size: 2rem; font-weight: 800; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+        .password-input {
+            width: 100%; padding: 1.2rem; border: 2px solid #e9ecef;
+            border-radius: 15px; font-size: 1.1rem; text-align: center;
+            margin-bottom: 1.5rem; transition: all 0.3s;
+        }
+        .password-input:focus {
+            outline: none; border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .password-buttons {
+            display: flex; gap: 1rem; justify-content: center;
+        }
+        .password-btn {
+            padding: 1rem 2rem; border: none; border-radius: 15px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; min-width: 120px;
+        }
+        .password-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .password-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .password-btn.secondary {
+            background: transparent; color: #667eea; border: 2px solid #667eea;
+        }
+        .password-btn.secondary:hover { background: #667eea; color: white; }
+        
+        /* Hide main content until authenticated */
+        .main-content { display: none; }
+        .main-content.show { display: block; }
+        
+        .navbar { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            padding: 1rem; 
+            border-radius: 20px; 
+            margin-bottom: 2rem; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .logo { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            color: white; 
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .home-link { 
+            color: rgba(255,255,255,0.9); 
+            text-decoration: none; 
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        .home-link:hover { color: white; }
+
+        .admin-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 2rem; 
+        }
+
+        .admin-card { 
+            background: white; 
+            border-radius: 25px; 
+            padding: 2rem; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1); 
+            transition: all 0.3s;
+        }
+        .admin-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15); 
+        }
+        .card-title { 
+            font-size: 1.8rem; 
+            margin-bottom: 1.5rem; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            font-weight: 600; 
+            color: #333; 
+        }
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea { 
+            width: 100%; 
+            padding: 1rem; 
+            border: 2px solid #e9ecef; 
+            border-radius: 15px; 
+            font-size: 1rem; 
+            transition: all 0.3s; 
+        }
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus { 
+            outline: none; 
+            border-color: #667eea; 
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1); 
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        /* NEW: Edit Mode Styling */
+        .btn-edit-mode {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+        }
+        .btn-edit-mode:hover {
+            box-shadow: 0 10px 25px rgba(243, 156, 18, 0.4) !important;
+        }
+        .editing-indicator {
+            background: #fff3cd; border-color: #f39c12; color: #856404;
+            padding: 0.75rem; border-radius: 10px; margin-bottom: 1rem;
+            font-weight: 600; display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .images-section {
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+        .images-section.dragover { border-color: #56ab2f; background: #e8f5e8; }
+        .image-upload-area { min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .image-preview-container { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; }
+        .image-preview { position: relative; width: 80px; height: 80px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-image {
+            position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none;
+            border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .images-count { font-weight: 600; color: #667eea; margin-top: 0.5rem; }
+        .images-limit { color: #999; font-size: 0.9rem; }
+
+        .btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; border: none; padding: 1rem 2rem; border-radius: 15px; 
+            font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; 
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .btn-danger { background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important; }
+        .btn-success { background: linear-gradient(135deg, #56ab2f, #a8e6cf) !important; }
+        .btn-small { width: auto; padding: 0.5rem 1rem; font-size: 0.9rem; }
+
+        .list-container { 
+            max-height: 400px; overflow-y: auto; border: 2px solid #e9ecef; 
+            border-radius: 15px; padding: 1rem; background: #f8f9fa;
+        }
+        .list-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 1rem; background: white; margin-bottom: 0.5rem; 
+            border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .item-info { font-weight: 500; color: #333; }
+        .item-meta { font-size: 0.9rem; color: #666; margin-top: 0.2rem; }
+
+        .stats { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 1rem; margin-bottom: 2rem; 
+        }
+        .stat-card { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; padding: 1.5rem; border-radius: 15px; text-align: center; 
+        }
+        .stat-number { font-size: 2rem; font-weight: 800; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; }
+
+        .clear-all-btn {
+            background: linear-gradient(135deg, #ff4757, #ff3838) !important;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container { grid-template-columns: 1fr; gap: 1.5rem; }
+            body { padding: 10px; }
+            .image-preview { width: 70px; height: 70px; }
+            .password-container { padding: 2rem 1.5rem; margin: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Modal - same -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-container">
+            <div class="password-title">
+                <i class="fas fa-lock"></i> Admin Login
+            </div>
+            <p style="color: #666; margin-bottom: 2rem; font-size: 1.1rem;">
+                Enter password to access Admin Panel
+            </p>
+            <input type="password" class="password-input" id="adminPassword" placeholder="Enter admin password">
+            <div class="password-buttons">
+                <button class="password-btn primary" onclick="checkPassword()">
+                    <i class="fas fa-sign-in-alt"></i> Enter
+                </button>
+                <button class="password-btn secondary" onclick="closeModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <nav class="navbar">
+            <a href="#" class="logo">🪼 Kartiki Resin Arts</a>
+            <a href="index.html" class="home-link">
+                <br>
+                <i class="fas fa-home"></i> Back to Home</a>
+        </nav>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCategories">0</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalProducts">0</div>
+                <div class="stat-label">Products</div>
+            </div>
+        </div>
+
+        <div class="admin-container">
+            <!-- Categories Card - same -->
+            <div class="admin-card">
+                <h2 class="card-title">
+                    <i class="fas fa-tags"></i> Manage Categories
+                </h2>
+                <div class="form-group">
+                    <label for="newCategory">New Category Name</label>
+                    <input type="text" id="newCategory" placeholder="e.g. Bridal Jewelry">
+                </div>
+                <button class="btn btn-success" onclick="addCategory()">
+                    <i class="fas fa-plus"></i> Add Category
+                </button>
+                <div class="form-group">
+                    <label>Categories List</label>
+                    <div class="list-container" id="categoriesList"></div>
+                </div>
+            </div>
+
+            <!-- Products Card - UPDATED -->
+            <div class="admin-card">
+                <h2 class="card-title">
+                    <i class="fas fa-box"></i> Manage Products
+                </h2>
+                
+                <!-- NEW: Editing Indicator -->
+                <div id="editingIndicator" class="editing-indicator" style="display: none;">
+                    <i class="fas fa-edit"></i> Editing <span id="editingProductName"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" placeholder="e.g. Resin Necklace">
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price (₹) *</label>
+                    <input type="number" id="productPrice" placeholder="e.g. 599" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Category *</label>
+                    <select id="productCategory">
+                        <option value="">Select Category</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productDesc">Description</label>
+                    <textarea id="productDesc" placeholder="Short product description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Product Images (Max 5)</label>
+                    <div class="images-section" id="imagesSection">
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;"></i>
+                            <p style="color: #666; margin-bottom: 0.5rem;">Drag & drop images here<br>or click to browse</p>
+                            <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                        </div>
+                        <div class="images-count" id="imagesCount">0/5 images</div>
+                        <div class="images-limit">Supports JPG, PNG, WEBP (Max 5MB each)</div>
+                        <div class="image-preview-container" id="imagePreviewContainer"></div>
+                    </div>
+                </div>
+                
+                <!-- UPDATED: Buttons -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <button class="btn btn-edit-mode" id="updateProductBtn" onclick="updateProduct()" style="display: none;">
+                        <i class="fas fa-save"></i> Update Product
+                    </button>
+                    <button class="btn" id="addProductBtn" onclick="addProduct()">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>Products List</label>
+                    <div class="list-container" id="productsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+const ADMIN_PASSWORD = "kartiki123";
+const PRODUCTS_KEY = "kartiki_products";
+const CATEGORIES_KEY = "kartiki_categories";
+const MAX_IMAGES = 5;
+
+let products = [];
+let categories = [];
+let currentImages = [];
+let editingProductId = null;
+
+/* ================= AUTH ================= */
+function checkPassword() {
+    const pass = document.getElementById("adminPassword").value;
+    if (pass === ADMIN_PASSWORD) {
+        document.getElementById("passwordModal").classList.add("hidden");
+        document.getElementById("mainContent").classList.add("show");
+        initAdmin();
+        showNotification("✅ Welcome Admin!");
+    } else {
+        document.getElementById("adminPassword").value = "";
+        showNotification("❌ Wrong password!", "error");
+    }
+}
+
+function closeModal() {
+    window.location.href = "index.html";
+}
+
+/* ================= INIT ================= */
+function initAdmin() {
+    loadData();
+    renderCategories();
+    renderProducts();
+    loadProductCategories();
+    updateStats();
+    initImageUpload();
+}
+
+/* ================= STORAGE ================= */
+function loadData() {
+    try {
+        products = JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || [];
+        categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY)) || [];
+        if (!Array.isArray(products)) products = [];
+        if (!Array.isArray(categories)) categories = [];
+    } catch {
+        products = [];
+        categories = [];
+    }
+}
+
+function saveData() {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+    updateStats();
+}
+
+/* ================= CATEGORY ================= */
+function addCategory() {
+    const name = document.getElementById("newCategory").value.trim();
+    if (!name || categories.includes(name)) {
+        showNotification("⚠️ Invalid or duplicate category!", "error");
+        return;
+    }
+    categories.push(name);
+    saveData();
+    renderCategories();
+    loadProductCategories();
+    document.getElementById("newCategory").value = "";
+}
+
+function deleteCategory(cat) {
+    if (!confirm(`Delete ${cat}?`)) return;
+    categories = categories.filter(c => c !== cat);
+    products.forEach(p => { if (p.category === cat) p.category = "Uncategorized"; });
+    saveData();
+    renderCategories();
+    renderProducts();
+    loadProductCategories();
+}
+
+function renderCategories() {
+    const box = document.getElementById("categoriesList");
+    box.innerHTML = categories.length ? categories.map(c => `
+        <div class="list-item">
+            <div>
+                <div class="item-info">${c}</div>
+                <div class="item-meta">${products.filter(p=>p.category===c).length} products</div>
+            </div>
+            <button class="btn btn-danger btn-small" onclick="deleteCategory('${c.replace(/'/g,"\\'")}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join("") : `<div style="text-align:center;color:#999">No categories</div>`;
+}
+
+function loadProductCategories() {
+    const sel = document.getElementById("productCategory");
+    sel.innerHTML = `<option value="">Select Category</option>`;
+    categories.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+}
+
+/* ================= PRODUCT ================= */
+function addProduct() {
+    const name = productName.value.trim();
+    const price = +productPrice.value;
+    const category = productCategory.value;
+    const desc = productDesc.value.trim();
+
+    if (!name || price <= 0 || !category) {
+        showNotification("❌ Fill required fields!", "error");
+        return;
+    }
+
+    products.push({
+        id: Date.now(),
+        name,
+        price,
+        category,
+        description: desc,
+        images: currentImages.map(i => i.url)
+    });
+
+    saveData();
+    renderProducts();
+    resetProductForm();
+    showNotification("✅ Product added!");
+}
+
+function editProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    editingProductId = id;
+    productName.value = p.name;
+    productPrice.value = p.price;
+    productCategory.value = p.category;
+    productDesc.value = p.description || "";
+
+    currentImages = (p.images || []).map(u => ({ url: u, name: "existing" }));
+    updateImagePreview();
+    updateImageCount();
+
+    editingIndicator.style.display = "flex";
+    editingProductName.textContent = p.name;
+    updateProductBtn.style.display = "flex";
+    addProductBtn.style.display = "none";
+}
+
+function updateProduct() {
+    if (!editingProductId) return;
+
+    const i = products.findIndex(p => p.id === editingProductId);
+    if (i === -1) return;
+
+    products[i] = {
+        ...products[i],
+        name: productName.value.trim(),
+        price: +productPrice.value,
+        category: productCategory.value,
+        description: productDesc.value.trim(),
+        images: currentImages.map(i => i.url)
+    };
+
+    saveData();
+    renderProducts();
+    resetProductForm();
+    showNotification("✅ Product updated!");
+}
+
+function deleteProduct(id) {
+    if (!confirm("Delete product?")) return;
+    products = products.filter(p => p.id !== id);
+    saveData();
+    renderProducts();
+}
+
+function renderProducts() {
+    const box = document.getElementById("productsList");
+    box.innerHTML = products.length ? products.map(p => `
+        <div class="list-item">
+            <div>
+                <div class="item-info">${p.name}</div>
+                <div class="item-meta">₹${p.price} • ${p.category} • ${(p.images||[]).length} images</div>
+            </div>
+            <div style="display:flex;gap:5px">
+                <button class="btn btn-edit-mode btn-small" onclick="editProduct(${p.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-danger btn-small" onclick="deleteProduct(${p.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join("") : `<div style="text-align:center;color:#999">No products</div>`;
+}
+
+/* ================= IMAGE ================= */
+function initImageUpload() {
+    imageUploadArea.onclick = () => imageInput.click();
+    imageInput.onchange = () => processFiles([...imageInput.files]);
+}
+
+function processFiles(files) {
+    files.forEach(f => {
+        if (currentImages.length >= MAX_IMAGES) return;
+        if (!f.type.startsWith("image/")) return;
+
+        const r = new FileReader();
+        r.onload = e => {
+            currentImages.push({ name: f.name, url: e.target.result });
+            updateImagePreview();
+            updateImageCount();
+        };
+        r.readAsDataURL(f);
+    });
+}
+
+function updateImagePreview() {
+    imagePreviewContainer.innerHTML = currentImages.map((img,i)=>`
+        <div class="image-preview">
+            <img src="${img.url}">
+            <button class="remove-image" onclick="removeImage(${i})">×</button>
+        </div>
+    `).join("");
+}
+
+function removeImage(i) {
+    currentImages.splice(i,1);
+    updateImagePreview();
+    updateImageCount();
+}
+
+function updateImageCount() {
+    imagesCount.textContent = `${currentImages.length}/${MAX_IMAGES} images`;
+}
+
+/* ================= RESET ================= */
+function resetProductForm() {
+    editingProductId = null;
+    productName.value = "";
+    productPrice.value = "";
+    productCategory.value = "";
+    productDesc.value = "";
+    currentImages = [];
+    updateImagePreview();
+    updateImageCount();
+    editingIndicator.style.display = "none";
+    updateProductBtn.style.display = "none";
+    addProductBtn.style.display = "flex";
+}
+
+/* ================= STATS ================= */
+function updateStats() {
+    totalCategories.textContent = categories.length;
+    totalProducts.textContent = products.length;
+}
+
+/* ================= NOTIFY ================= */
+function showNotification(msg, type="success") {
+    const n = document.createElement("div");
+    n.textContent = msg;
+    n.style.cssText = `
+        position:fixed;top:20px;right:20px;
+        background:${type==="error"?"#e74c3c":"#28a745"};
+        color:#fff;padding:1rem 2rem;border-radius:10px;
+        z-index:9999;font-weight:600
+    `;
+    document.body.appendChild(n);
+    setTimeout(()=>n.remove(),3000);
+}
+</script>
+
+</body>
+</html>
